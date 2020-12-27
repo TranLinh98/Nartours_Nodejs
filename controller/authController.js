@@ -17,14 +17,16 @@ const signToken = id => jwt.sign(
 );
 
 const createSendToken = (user, statusCode, req, res) => {
-    const token = signToken(user._id );
-    const cookieOptions =  {
-        expires: new Date(
-            Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-        ),
-        httpOnly: true,
-        secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
-    };
+    const token = signToken(user._id);
+  
+    res.cookie('jwt', token, {
+      expires: new Date(
+        Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+      ),
+      httpOnly: true,
+      secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
+    });
+
     // remove password out ouput
     user.password = undefined;
 
@@ -195,7 +197,7 @@ exports.resetPassword =catchAsync(async (req, res, next) => {
     
     // 3.update changPasswordAt property for the user
     // 4.log the user in , send JWT
-    createSendToken(user, 200, req, res);
+    createSendToken(user, 200, res);
 
 });
 
