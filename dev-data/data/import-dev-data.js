@@ -7,13 +7,18 @@ const Review = require('../../models/reviewModel');
 
 dotenv.config({path: './config.env'});
 
-mongoose.connect(process.env.DATABASE_LOCAL, {
+const DB = process.env.DATABASE.replace(
+  '<password>',
+  process.env.DATABASE_PASSWORD
+);
+
+mongoose.connect(DB, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
     useFindAndModify: false,
-}).then(() => console.log('Connect Database successful!'))
-  .catch(() => console.log('Connect Database failed'));
+}).then(() => console.log('Connect Database successful!'));
+
 
 //read json file 
 const tours = JSON.parse(fs.readFileSync(`${__dirname}/tours.json`, 'utf-8'));
