@@ -16,8 +16,13 @@ router.route('/').post(userController.createUser);
 router.use(authController.protect);
 
 router.patch('/updateMyPassword', authController.updatePassword);
-router.get('/me', userController.getMe, userController.getUser)
-router.patch('/updateMe', userController.updateMe)
+router.get('/me', userController.getMe, userController.getUser);
+router.patch(
+  '/updateMe',
+  userController.uploadUserPhoto,
+  userController.resizeUserPhoto,
+  userController.updateMe
+  );
 router.delete('/deleteMe', userController.deleteMe);
 
 //must role = admin all routes after go to assets

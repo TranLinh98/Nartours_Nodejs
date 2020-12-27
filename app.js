@@ -36,6 +36,7 @@ app.use('/api', limiter);
 
 //body parser, reading data from body into req.body
 app.use(express.json({limit: '10kb'}));
+app.use(express.urlencoded({extended: true, limit: '10kb'}));
 app.use(cookieParser());
 
 //data sanitization against NoSQL query injection
@@ -62,7 +63,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 //test middleware
 app.use((req, res, next) => {
     req.requestTime = new Date().toISOString();
-    console.log(req.cookies);
+    // console.log(req.cookies);
 
     next();
 });

@@ -26,32 +26,66 @@ const handleJWTExpriedError = err => {
     return new AppError(message, 400);
 }
 
-const sendErrorDev = (err, res) => {
-    res.status(err.statusCode).json({
-        status: err.status,
-        message: err.message,
-        error: err,
-        stack: err.stack
+const sendErrorDev = (err, req, res) => {
+    if (req.originalUrl.startsWith('/api')) {
+        return res.status(err.statusCode).json({
+          status: err.status,
+          error: err,
+          message: err.message,
+          stack: err.stack
+        });
+      };
+    console.error('ERROR 💥', err);
+    if (err.statusCode !== 500) {
+        console.log(err);
+        return res.status(err.statusCode).render('error', {
+            title: 'Something went wrong!',
+            msg: err.message
+         });
+    }
+    return res.status(err.statusCode).render('error', {
+        title: 'Something went wrong!',
+        msg: 'Please try again later.'
     });
 };
 
-const sendErrorProd = (err, res) => {
-    //Operational send message to client
-     if(err.isOperational) {
-        res.status(err.statusCode).json({
-            status: err.status,
-            message: err.message
+const sendErrorProd = (err, req, res) => {
+    // A) API
+    if (req.originalUrl.startsWith('/api')) {
+      // A) Operational, trusted error: send message to client
+      if (err.isOperational) {
+        return res.status(err.statusCode).json({
+          status: err.status,
+          message: err.message
         });
-
-    //programing error
-    } else {
-        console.log('ERROR ', err);
-
-        res.status(500).json({
-            status: 'error',
-            message: 'Something went wrong!'
-        })
+      }
+      // B) Programming or other unknown error: don't leak error details
+      // 1) Log error
+      console.error('ERROR 💥', err);
+      // 2) Send generic message
+      return res.status(500).json({
+        status: 'error',
+        message: 'Something went very wrong!'
+      });
     }
+
+    // B) RENDERED WEBSITE
+    // A) Operational, trusted error: send message to client
+    if (err.isOperational) {
+        console.log(err);
+        return res.status(err.statusCode).render('error', {
+        title: 'Something went wrong!',
+        msg: err.message
+        });
+    }
+    // B) Programming or other unknown error: don't leak error details
+    // 1) Log error
+    console.error('ERROR 💥', err);
+    // 2) Send generic message
+    return res.status(err.statusCode).render('error', {
+        title: 'Something went wrong!',
+        msg: 'Please try again later.'
+    });
 };
 
 module.exports = (err, req, res, next) => {
@@ -59,29 +93,30 @@ module.exports = (err, req, res, next) => {
     err.status = err.status || 'error';
 
     if(process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line node/no-unsupported-features/es-syntax
          let error = { ...err};
+        //  error.message = err.message;
+        
          if(error.kind === 'ObjectId') {
             error = handleCastErrorDB(error);
-            sendErrorDev(error,res);
+            sendErrorDev(err, req, res);
          }
          if(error.code === 11000) {
             error = handleDuplicateFieldsDB(error);
-            sendErrorDev(error,res);
+            sendErrorDev(err, req, res);
          }
          if(error.name === 'ValidationError') {
              error = handleValidationError(error);
-             sendErrorDev(error,res);
+             sendErrorDev(err, req, res);
          }
          if(error.name === 'JsonWebTokenError') {
              error = handleJWTError(error);
-             sendErrorDev(error,res);
+             sendErrorDev(err, req, res);
          }
          if(error.name === 'TokenExpiredError') {
              error = handleJWTExpriedError(error);
-             sendErrorDev(error,res);
+             sendErrorDev(err, req, res);
          }
-       sendErrorDev(err,res);
+       sendErrorDev(err, req, res);
 
     } else if( process.env.NODE_ENV === 'production' ) {
         // eslint-disable-next-line node/no-unsupported-features/es-syntax
@@ -89,8 +124,8 @@ module.exports = (err, req, res, next) => {
 
         if(error.kind === 'ObjectId') {
             error = handleCastErrorDB(error);
-            sendErrorProd(error, res);
+            sendErrorProd(error, req, res);
         }
-        sendErrorProd(err, res);
+        sendErrorProd(err, req, res);
     }
-}
+};
