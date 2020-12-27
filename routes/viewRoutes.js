@@ -1,7 +1,6 @@
 const express = require('express');
 const viewController = require('../controller/viewController');
 const authController = require('../controller/authController');
-const bookingController = require('../controller/bookingController');
 
 const router = express.Router();
 
@@ -12,7 +11,6 @@ router.get('/me',authController.protect, viewController.getAccount);
 
 router.get(
     '/my-tours',
-    bookingController.createBookingCheckout,
     authController.protect,
     viewController.getMyTours
 );
